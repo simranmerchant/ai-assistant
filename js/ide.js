@@ -83,9 +83,24 @@ var layoutConfig = {
                     readOnly: true
                 }
             }]
+        }, {
+            type: "column",
+            width: 25,
+            content: [{
+                type: "component",
+                componentName: "assistant",
+                id: "assistant",
+                title: "AI Assistant",
+                isClosable: false,
+                componentState: {
+                    readOnly: false,
+                    wordwrap: true
+                }
+            }]
         }]
     }]
 };
+
 
 const PUTER = puter.env === "app";
 var gPuterFile;
@@ -580,6 +595,34 @@ $(document).ready(async function () {
                     enabled: false
                 }
             });
+        });
+
+        layout.registerComponent("assistant", function (container, state) {
+            const assistantContainer = document.createElement("div");
+            assistantContainer.className = "assistant-container h-pull flex flex-col bg-white dark:bg-gray-900";
+        
+            assistantContainer.innerHTML = `
+                <div class="flex flex-col h-screen bg-gray-100">
+                    <!-- Header -->
+                    <div class="p-4 bg-blue-600 text-white">
+                        <h2 class="text-lg font-semibold">AI Assistant</h2>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div id="chat-body" class="flex-grow p-4 overflow-y-auto space-y-4">
+                        <!-- Messages will be dynamically added here -->
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="p-4 bg-white border-t border-gray-200">
+                        <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-300 resize-none" placeholder="Ask your question..." rows="3"></textarea>
+                        <button id="assistant-submit" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Submit</button>
+                        <button id="assistant-clear" class="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear</button>
+                    </div>
+                </div>
+            `;
+        
+            container.getElement().append(assistantContainer);
         });
 
         layout.on("initialised", function () {
