@@ -656,10 +656,10 @@ $(document).ready(async function () {
 
                 try {
                     // Fetch source code, input, and output from the IDE
-                    const sourceCode = sourceEditor.getValue();
-                    const languageId = getSelectedLanguageId();
-                    const input = stdinEditor.getValue();
-                    const output = stdoutEditor.getValue();
+                    const sourceCode = sourceEditor.getValue() || "";
+                    const languageId = getSelectedLanguageId() || 105; // Default to C++ (GCC 14.1.0)
+                    const input = stdinEditor.getValue() || "";
+                    const output = stdoutEditor.getValue() || "";
 
                     // Prepare the context for the AI
                     const context = `
@@ -677,28 +677,28 @@ $(document).ready(async function () {
 
                     // Prepare the messages for the OpenRouter API
                     const messages = [
-                        { role: "system", content: "You are a helpful coding assistant." },
-                        { role: "user", content: context },
+                        { role: "system", content: "You are a helpful coding assistant. You have access to the following content." + context }, 
                         { role: "user", content: userInput },
                     ];
                     
                     console.log("Request Payload:", {
-                        model: "openai/chatgpt-4o-latest", 
                         messages: messages,
                     });
                     
 
-                    console.log("Messages sent to OpenRouter:", messages);
 
+                    console.log("API Key:", AI_API_KEY);
+                    console.log("Source Code:", sourceCode);
+                    console.log("Messages:", messages);
                     // Make the API request to OpenRouter
-                    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                    const response = await fetch("https://openrouter.ai/v1/chat/completions", {
                         method: "POST",
                         headers: {
                             "Authorization": `Bearer ${AI_API_KEY}`, // Use the API key from the constant
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
-                            model: "openai/chatgpt-4o-latest", // add a way for user to choose model
+                            model: "openai/gpt-4o", // add a way for user to choose model
                             messages: messages,
                         }),
                     });
@@ -709,6 +709,7 @@ $(document).ready(async function () {
 
                     // Parse the response and add the assistant's message to the chat
                     const data = await response.json();
+                    console.log("API Response:", data);
                     const assistantResponse = data.choices[0].message.content;
                     addMessage("assistant", assistantResponse);
                 } catch (error) {
