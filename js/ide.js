@@ -691,14 +691,14 @@ $(document).ready(async function () {
                     console.log("Source Code:", sourceCode);
                     console.log("Messages:", messages);
                     // Make the API request to OpenRouter
-                    const response = await fetch("https://openrouter.ai/v1/chat/completions", {
+                    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                         method: "POST",
                         headers: {
                             "Authorization": `Bearer ${AI_API_KEY}`, // Use the API key from the constant
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
-                            model: "openai/gpt-4o", // add a way for user to choose model
+                            model: "google/gemini-2.0-pro-exp-02-05:free", // add a way for user to choose model
                             messages: messages,
                         }),
                     });
