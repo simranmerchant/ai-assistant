@@ -605,7 +605,7 @@ $(document).ready(async function () {
                 <div class="flex flex-col h-screen bg-gray-100">
                     <!-- Header -->
                     <div class="p-4 bg-blue-600 text-white">
-                        <h2 class="text-lg font-semibold">AI Assistant</h2>
+                        <h2 class="text-lg font-semibold">What can I help you with?</h2>
                     </div>
 
                     <!-- Chat Messages -->
@@ -618,6 +618,17 @@ $(document).ready(async function () {
                         <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-300 resize-none" placeholder="Ask your question..." rows="3"></textarea>
                         <button id="assistant-submit" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Submit</button>
                         <button id="assistant-clear" class="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear</button>
+                    </div>
+
+                    <div class="text-right">
+                        <div class="inline-block max-w-[80%] p-3 bg-blue-100 rounded-lg">
+                            <p class="text-sm text-gray-900">Hello, how can I help you?</p>
+                        </div>
+                    </div>
+                    <div class="text-left">
+                        <div class="inline-block max-w-[80%] p-3 bg-gray-100 rounded-lg">
+                            <p class="text-sm text-gray-900">Hi! I'm here to assist you.</p>
+                        </div>
                     </div>
                 </div>
             `;
