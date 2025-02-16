@@ -1,7 +1,5 @@
 const API_KEY = ""; // Get yours at https://platform.sulu.sh/apis/judge0
-const AI_API_KEY = localStorage.getItem("AI_API_KEY") || "";
-
-
+const AI_API_KEY = localStorage.getItem("ai_api_key");
 const AUTH_HEADERS = API_KEY ? {
     "Authorization": `Bearer ${API_KEY}`
 } : {};
@@ -599,71 +597,130 @@ $(document).ready(async function () {
             });
         });
 
+
         layout.registerComponent("assistant", function (container, state) {
             const assistantContainer = document.createElement("div");
-            assistantContainer.className = "assistant-container h-pull flex flex-col bg-white dark:bg-gray-900";
-        
+            assistantContainer.className = "flex flex-col h-full bg-gray-100";
+
             assistantContainer.innerHTML = `
-                <div class="flex flex-col h-screen bg-gray-100">
-                    <!-- Header -->
-                    <div class="p-4 bg-blue-600 text-white">
-                        <h2 class="text-lg font-semibold">What can I help you with?</h2>
-                    </div>
+                <!-- Header -->
+                <div class="p-4 bg-blue-600 text-white">
+                    <h2 class="text-lg font-semibold">What can I help you with?</h2>
+                </div>
 
-                    <!-- Chat Messages -->
-                    <div id="chat-body" class="flex-grow p-4 overflow-y-auto space-y-4">
-                        <!-- Messages will be dynamically added here -->
-                    </div>
+                <!-- Chat Messages -->
+                <div id="chat-body" class="flex-grow p-4 overflow-y-auto space-y-4">
+                    <!-- Messages will be dynamically added here -->
+                </div>
 
-                    <!-- Input Area -->
-                    <div class="p-4 bg-white border-t border-gray-200">
-                        <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-300 resize-none" placeholder="Ask your question..." rows="3"></textarea>
-                        <button id="assistant-send" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Send</button>
-                        <button id="assistant-clear" class="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear Chat</button>
-                    </div>
-
-                    <div class="text-right">
-                        <div class="inline-block max-w-[80%] p-3 bg-blue-100 rounded-lg">
-                            <p class="text-sm text-gray-900">Hello, how can I help you?</p>
-                        </div>
-                    </div>
-                    <div class="text-left">
-                        <div class="inline-block max-w-[80%] p-3 bg-gray-100 rounded-lg">
-                            <p class="text-sm text-gray-900">Hi! I'm here to assist you.</p>
-                        </div>
+                <!-- Input Area -->
+                <div class="p-4 bg-white border-t border-gray-200">
+                    <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-300 resize-none" placeholder="Ask your question..." rows="3"></textarea>
+                    <div class="flex gap-2 mt-2">
+                        <button id="assistant-send" class="flex-grow px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Send</button>
+                        <button id="assistant-clear" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear Chat</button>
                     </div>
                 </div>
             `;
 
-            assistantContainer.querySelector("#assistant-send").addEventListener("click", function () {
-                const input = assistantContainer.querySelector("#assistant-input").value;
-                if (input.trim() === "") return;
+            container.getElement().append(assistantContainer);
 
-                const chatBody = assistantContainer.querySelector("#chat-body");
-                const userMessage = document.createElement("div");
-                userMessage.className = "text-right";
-                userMessage.innerHTML = `<div class="inline-block max-w-[80%] p-3 bg-blue-100 rounded-lg"><p class="text-sm text-gray-900">${input}</p></div>`;
-                chatBody.appendChild(userMessage);
-                chatBody.scrollTop = chatBody.scrollHeight;
+            const chatBody = assistantContainer.querySelector("#chat-body");
+            const inputField = assistantContainer.querySelector("#assistant-input");
+            const sendButton = assistantContainer.querySelector("#assistant-send");
+            const clearButton = assistantContainer.querySelector("#assistant-clear");
+
+            // Function to add a message to the chat
+            function addMessage(role, content) {
+                const messageDiv = document.createElement("div");
+                messageDiv.className = role === "user" ? "text-right" : "text-left";
+                messageDiv.innerHTML = `
+                    <div class="inline-block max-w-[80%] p-3 ${role === "user" ? "bg-blue-100" : "bg-gray-100"} rounded-lg">
+                        <p class="text-sm text-gray-900">${content}</p>
+                    </div>
+                `;
+                chatBody.appendChild(messageDiv);
+                chatBody.scrollTop = chatBody.scrollHeight; // Scroll to the bottom
+            }
+
+            // Send button functionality
+            sendButton.addEventListener("click", async () => {
+                const userInput = inputField.value.trim();
+                if (!userInput) return;
+
+                // Add user message to the chat
+                addMessage("user", userInput);
 
                 // Clear the input field
-                assistantContainer.querySelector("#assistant-input").value = "";
-            }
-            );
+                inputField.value = "";
 
-            assistantContainer.querySelector("#assistant-clear").addEventListener("click", function () {
-                const chatBody = assistantContainer.querySelector("#chat-body");
+                try {
+                    // Fetch source code, input, and output from the IDE
+                    const sourceCode = sourceEditor.getValue();
+                    const languageId = getSelectedLanguageId();
+                    const input = stdinEditor.getValue();
+                    const output = stdoutEditor.getValue();
+
+                    // Prepare the context for the AI
+                    const context = `
+                        Source Code:
+                        ${sourceCode}
+
+                        Language ID: ${languageId}
+
+                        Input:
+                        ${input}
+
+                        Output:
+                        ${output}
+                    `;
+
+                    // Prepare the messages for the OpenRouter API
+                    const messages = [
+                        { role: "system", content: "You are a helpful coding assistant." },
+                        { role: "user", content: context },
+                        { role: "user", content: userInput },
+                    ];
+                    
+                    console.log("Request Payload:", {
+                        model: "openai/chatgpt-4o-latest", 
+                        messages: messages,
+                    });
+                    
+
+                    console.log("Messages sent to OpenRouter:", messages);
+
+                    // Make the API request to OpenRouter
+                    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${AI_API_KEY}`, // Use the API key from the constant
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: "openai/chatgpt-4o-latest", // add a way for user to choose model
+                            messages: messages,
+                        }),
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+
+                    // Parse the response and add the assistant's message to the chat
+                    const data = await response.json();
+                    const assistantResponse = data.choices[0].message.content;
+                    addMessage("assistant", assistantResponse);
+                } catch (error) {
+                    console.error("Error:", error);
+                    addMessage("assistant", "An error occurred while processing your request.");
+                }
+            });
+
+            // Clear button functionality
+            clearButton.addEventListener("click", () => {
                 chatBody.innerHTML = ""; // Clear all chat messages
-            }
-            );
-
-            // get source, input, and output content
-            const sourceCode = sourceEditor.getValue();
-            const languageId = getSelectedLanguageId();
-            const input = stdinEditor.getValue();
-            const output = stdoutEditor.getValue();
-        
-            container.getElement().append(assistantContainer);
+            });
         });
 
         layout.on("initialised", function () {
