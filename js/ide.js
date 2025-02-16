@@ -1,4 +1,6 @@
 const API_KEY = ""; // Get yours at https://platform.sulu.sh/apis/judge0
+const AI_API_KEY = localStorage.getItem("AI_API_KEY") || "";
+
 
 const AUTH_HEADERS = API_KEY ? {
     "Authorization": `Bearer ${API_KEY}`
@@ -616,8 +618,8 @@ $(document).ready(async function () {
                     <!-- Input Area -->
                     <div class="p-4 bg-white border-t border-gray-200">
                         <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-300 resize-none" placeholder="Ask your question..." rows="3"></textarea>
-                        <button id="assistant-submit" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Submit</button>
-                        <button id="assistant-clear" class="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear</button>
+                        <button id="assistant-send" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Send</button>
+                        <button id="assistant-clear" class="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear Chat</button>
                     </div>
 
                     <div class="text-right">
@@ -632,6 +634,34 @@ $(document).ready(async function () {
                     </div>
                 </div>
             `;
+
+            assistantContainer.querySelector("#assistant-send").addEventListener("click", function () {
+                const input = assistantContainer.querySelector("#assistant-input").value;
+                if (input.trim() === "") return;
+
+                const chatBody = assistantContainer.querySelector("#chat-body");
+                const userMessage = document.createElement("div");
+                userMessage.className = "text-right";
+                userMessage.innerHTML = `<div class="inline-block max-w-[80%] p-3 bg-blue-100 rounded-lg"><p class="text-sm text-gray-900">${input}</p></div>`;
+                chatBody.appendChild(userMessage);
+                chatBody.scrollTop = chatBody.scrollHeight;
+
+                // Clear the input field
+                assistantContainer.querySelector("#assistant-input").value = "";
+            }
+            );
+
+            assistantContainer.querySelector("#assistant-clear").addEventListener("click", function () {
+                const chatBody = assistantContainer.querySelector("#chat-body");
+                chatBody.innerHTML = ""; // Clear all chat messages
+            }
+            );
+
+            // get source, input, and output content
+            const sourceCode = sourceEditor.getValue();
+            const languageId = getSelectedLanguageId();
+            const input = stdinEditor.getValue();
+            const output = stdoutEditor.getValue();
         
             container.getElement().append(assistantContainer);
         });
