@@ -1,7 +1,5 @@
 const API_KEY = ""; // Get yours at https://platform.sulu.sh/apis/judge0
-const AI_API_KEY = localStorage.getItem("AI_API_KEY") || "";
-
-
+const AI_API_KEY = localStorage.getItem("ai_api_key");
 const AUTH_HEADERS = API_KEY ? {
     "Authorization": `Bearer ${API_KEY}`
 } : {};
@@ -599,71 +597,174 @@ $(document).ready(async function () {
             });
         });
 
+
         layout.registerComponent("assistant", function (container, state) {
             const assistantContainer = document.createElement("div");
-            assistantContainer.className = "assistant-container h-pull flex flex-col bg-white dark:bg-gray-900";
+            assistantContainer.className = "flex flex-col h-full bg-gray-100";
         
+            // Chat UI Structure
             assistantContainer.innerHTML = `
-                <div class="flex flex-col h-screen bg-gray-100">
-                    <!-- Header -->
-                    <div class="p-4 bg-blue-600 text-white">
-                        <h2 class="text-lg font-semibold">What can I help you with?</h2>
+                <!-- Header -->
+                <div class="p-4 bg-blue-600 text-white">
+                    <h2 class="text-lg font-semibold">What can I help you with?</h2>
+                    <!-- Model Selection Dropdown -->
+                    <div class="mt-2">
+                        <label for="model-select" class="block text-sm font-medium">Select Model:</label>
+                        <select id="model-select" class="w-full p-2 mt-1 rounded-lg bg-white text-gray-900">
+                            <option value="google/gemini-2.0-pro-exp-02-05:free">Gemini 2.0 Pro</option>
+                            <option value="openai/gpt-4">GPT-4</option>
+                            <option value="anthropic/claude-2">Claude 2</option>
+                            <option value="meta/llama-2-70b-chat">Llama 2 (70B)</option>
+                            <option value="cohere/command-r-plus">Cohere Command R+</option>
+                        </select>
                     </div>
-
-                    <!-- Chat Messages -->
-                    <div id="chat-body" class="flex-grow p-4 overflow-y-auto space-y-4">
-                        <!-- Messages will be dynamically added here -->
+                    <!-- API Key Input -->
+                    <div class="mt-2">
+                        <label for="api-key-input" class="block text-sm font-medium">API Key (optional):</label>
+                        <input id="api-key-input" type="password" class="w-full p-2 mt-1 rounded-lg bg-white text-gray-900" placeholder="Enter your API key">
                     </div>
-
-                    <!-- Input Area -->
-                    <div class="p-4 bg-white border-t border-gray-200">
-                        <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-300 resize-none" placeholder="Ask your question..." rows="3"></textarea>
-                        <button id="assistant-send" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Send</button>
-                        <button id="assistant-clear" class="mt-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear Chat</button>
-                    </div>
-
-                    <div class="text-right">
-                        <div class="inline-block max-w-[80%] p-3 bg-blue-100 rounded-lg">
-                            <p class="text-sm text-gray-900">Hello, how can I help you?</p>
-                        </div>
-                    </div>
-                    <div class="text-left">
-                        <div class="inline-block max-w-[80%] p-3 bg-gray-100 rounded-lg">
-                            <p class="text-sm text-gray-900">Hi! I'm here to assist you.</p>
-                        </div>
+                </div>
+        
+                <!-- Chat Messages -->
+                <div id="chat-body" class="flex-grow p-4 overflow-y-auto space-y-4">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+        
+                <!-- Input Area -->
+                <div class="p-4 bg-white border-t border-gray-200">
+                    <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-300 resize-none" placeholder="Ask your question..." rows="3"></textarea>
+                    <div class="flex gap-2 mt-2">
+                        <button id="assistant-send" class="flex-grow px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Send</button>
+                        <button id="assistant-clear" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear Chat</button>
                     </div>
                 </div>
             `;
-
-            assistantContainer.querySelector("#assistant-send").addEventListener("click", function () {
-                const input = assistantContainer.querySelector("#assistant-input").value;
-                if (input.trim() === "") return;
-
-                const chatBody = assistantContainer.querySelector("#chat-body");
-                const userMessage = document.createElement("div");
-                userMessage.className = "text-right";
-                userMessage.innerHTML = `<div class="inline-block max-w-[80%] p-3 bg-blue-100 rounded-lg"><p class="text-sm text-gray-900">${input}</p></div>`;
-                chatBody.appendChild(userMessage);
-                chatBody.scrollTop = chatBody.scrollHeight;
-
-                // Clear the input field
-                assistantContainer.querySelector("#assistant-input").value = "";
-            }
-            );
-
-            assistantContainer.querySelector("#assistant-clear").addEventListener("click", function () {
-                const chatBody = assistantContainer.querySelector("#chat-body");
-                chatBody.innerHTML = ""; // Clear all chat messages
-            }
-            );
-
-            // get source, input, and output content
-            const sourceCode = sourceEditor.getValue();
-            const languageId = getSelectedLanguageId();
-            const input = stdinEditor.getValue();
-            const output = stdoutEditor.getValue();
         
             container.getElement().append(assistantContainer);
+        
+            const chatBody = assistantContainer.querySelector("#chat-body");
+            const inputField = assistantContainer.querySelector("#assistant-input");
+            const sendButton = assistantContainer.querySelector("#assistant-send");
+            const clearButton = assistantContainer.querySelector("#assistant-clear");
+            const modelSelect = assistantContainer.querySelector("#model-select");
+            const apiKeyInput = assistantContainer.querySelector("#api-key-input");
+        
+            // Load default API key from localStorage (if available)
+            const defaultApiKey = localStorage.getItem("defaultApiKey") || AI_API_KEY; // Fallback to your key
+            apiKeyInput.value = defaultApiKey; // Pre-fill the input with the default key
+        
+            // Add a message to the chat
+            function addMessage(role, content) {
+                const messageDiv = document.createElement("div");
+                messageDiv.className = role === "user" ? "text-right" : "text-left";
+                messageDiv.innerHTML = `
+                    <div class="inline-block max-w-[80%] p-3 ${role === "user" ? "bg-blue-100" : "bg-gray-100"} rounded-lg">
+                        <p class="text-sm text-gray-900">${formatResponse(content)}</p>
+                    </div>
+                `;
+                chatBody.appendChild(messageDiv);
+                chatBody.scrollTop = chatBody.scrollHeight; // Scroll to the bottom
+            }
+        
+            // Format AI response for better readability
+            function formatResponse(content) {
+                // Convert Markdown to HTML (if needed)
+                return content.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+            }
+        
+            // Send user input to the API
+            async function sendMessage() {
+                const userInput = inputField.value.trim();
+                if (!userInput) return;
+        
+                // Add user message to the chat
+                addMessage("user", userInput);
+                inputField.value = ""; // Clear input field
+        
+                // Disable send button and show loading state
+                sendButton.disabled = true;
+                sendButton.textContent = "Sending...";
+        
+                try {
+                    // Fetch context from the IDE
+                    const sourceCode = sourceEditor.getValue() || "";
+                    const languageId = getSelectedLanguageId() || 105; // Default to C++
+                    const input = stdinEditor.getValue() || "";
+                    const output = stdoutEditor.getValue() || "";
+        
+                    // Prepare context for the AI
+                    const context = `
+                        Source Code:
+                        ${sourceCode}
+        
+                        Language ID: ${languageId}
+        
+                        Input:
+                        ${input}
+        
+                        Output:
+                        ${output}
+                    `;
+        
+                    // Get selected model from the dropdown
+                    const selectedModel = modelSelect.value;
+        
+                    // Get API key (user's key if provided, otherwise default key)
+                    const apiKey = apiKeyInput.value.trim() || defaultApiKey;
+        
+                    // Prepare messages for the API
+                    const messages = [
+                        { role: "system", content: "You are a helpful coding assistant. Respond concisely and format your answers for readability. Context: " + context },
+                        { role: "user", content: userInput },
+                    ];
+        
+                    // Make API request
+                    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${apiKey}`, // Use the selected API key
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            model: selectedModel, // Use the selected model
+                            messages: messages,
+                        }),
+                    });
+        
+                    if (!response.ok) {
+                        throw new Error(`API request failed with status ${response.status}`);
+                    }
+        
+                    // Parse response and add assistant's message
+                    const data = await response.json();
+                    const assistantResponse = data.choices[0].message.content;
+                    addMessage("assistant", assistantResponse);
+                } catch (error) {
+                    console.error("Error:", error);
+                    addMessage("assistant", "An error occurred while processing your request.");
+                } finally {
+                    // Re-enable send button
+                    sendButton.disabled = false;
+                    sendButton.textContent = "Send";
+                }
+            }
+        
+            // Clear chat history
+            function clearChat() {
+                chatBody.innerHTML = "";
+            }
+        
+            // Save API key to localStorage when the input loses focus
+            apiKeyInput.addEventListener("blur", () => {
+                const userApiKey = apiKeyInput.value.trim();
+                if (userApiKey) {
+                    localStorage.setItem("defaultApiKey", userApiKey); // Save the user's key
+                }
+            });
+        
+            // Event listeners
+            sendButton.addEventListener("click", sendMessage);
+            clearButton.addEventListener("click", clearChat);
         });
 
         layout.on("initialised", function () {
