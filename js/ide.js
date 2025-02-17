@@ -600,17 +600,17 @@ $(document).ready(async function () {
 
         layout.registerComponent("assistant", function (container, state) {
             const assistantContainer = document.createElement("div");
-            assistantContainer.className = "flex flex-col h-full bg-gray-100";
+            assistantContainer.className = "flex flex-col h-full bg-gray-800"; 
         
             // Chat UI Structure
             assistantContainer.innerHTML = `
                 <!-- Header -->
-                <div class="p-4 bg-blue-600 text-white">
+                <div class="p-4 bg-gray-700 text-white">
                     <h2 class="text-lg font-semibold">What can I help you with?</h2>
                     <!-- Model Selection Dropdown -->
                     <div class="mt-2">
                         <label for="model-select" class="block text-sm font-medium">Select Model:</label>
-                        <select id="model-select" class="w-full p-2 mt-1 rounded-lg bg-white text-gray-900">
+                        <select id="model-select" class="w-full p-2 mt-1 rounded-lg bg-gray-600 text-white">
                             <option value="google/gemini-2.0-pro-exp-02-05:free">Gemini 2.0 Pro</option>
                             <option value="openai/gpt-4">GPT-4</option>
                             <option value="anthropic/claude-2">Claude 2</option>
@@ -621,18 +621,18 @@ $(document).ready(async function () {
                     <!-- API Key Input -->
                     <div class="mt-2">
                         <label for="api-key-input" class="block text-sm font-medium">API Key (optional):</label>
-                        <input id="api-key-input" type="password" class="w-full p-2 mt-1 rounded-lg bg-white text-gray-900" placeholder="Enter your API key">
+                        <input id="api-key-input" type="password" class="w-full p-2 mt-1 rounded-lg bg-gray-600 text-white" placeholder="Enter your API key"> <!-- Changed to a darker grey -->
                     </div>
                 </div>
         
                 <!-- Chat Messages -->
-                <div id="chat-body" class="flex-grow p-4 overflow-y-auto space-y-4">
+                <div id="chat-body" class="flex-grow p-4 overflow-y-auto space-y-4 bg-gray-800">
                     <!-- Messages will be dynamically added here -->
                 </div>
         
                 <!-- Input Area -->
-                <div class="p-4 bg-white border-t border-gray-200">
-                    <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-300 resize-none" placeholder="Ask your question..." rows="3"></textarea>
+                <div class="p-4 bg-gray-700 border-t border-gray-600">
+                    <textarea id="assistant-input" class="w-full p-3 rounded-lg border border-gray-600 bg-gray-600 text-white resize-none" placeholder="Ask your question..." rows="3"></textarea> <!-- Changed to a darker grey -->
                     <div class="flex gap-2 mt-2">
                         <button id="assistant-send" class="flex-grow px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">Send</button>
                         <button id="assistant-clear" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">Clear Chat</button>
@@ -658,8 +658,8 @@ $(document).ready(async function () {
                 const messageDiv = document.createElement("div");
                 messageDiv.className = role === "user" ? "text-right" : "text-left";
                 messageDiv.innerHTML = `
-                    <div class="inline-block max-w-[80%] p-3 ${role === "user" ? "bg-blue-100" : "bg-gray-100"} rounded-lg">
-                        <p class="text-sm text-gray-900">${formatResponse(content)}</p>
+                    <div class="inline-block max-w-[80%] p-3 ${role === "user" ? "bg-blue-600" : "bg-gray-700"} rounded-lg"> <!-- Changed to a darker grey -->
+                        <p class="text-sm text-white">${formatResponse(content)}</p> <!-- Changed text color to white -->
                     </div>
                 `;
                 chatBody.appendChild(messageDiv);
