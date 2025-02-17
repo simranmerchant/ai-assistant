@@ -607,17 +607,22 @@ $(document).ready(async function () {
                 <!-- Header -->
                 <div class="p-4 bg-blue-600 text-white">
                     <h2 class="text-lg font-semibold">What can I help you with?</h2>
-                </div>
-        
-                <!-- Model Selection Dropdown -->
-                <div class="p-4 bg-blue-500 text-white">
-                    <label for="model-select" class="block text-sm font-medium">Select Model:</label>
-                    <select id="model-select" class="w-full p-2 mt-1 rounded-lg bg-white text-gray-900">
-                        <option value="google/gemini-2.0-pro-exp-02-05:free">Gemini 2.0 Pro</option>
-                        <option value="openai/gpt-4">GPT-4</option>
-                        <option value="anthropic/claude-2">Claude 2</option>
-                        <!-- Add more models as needed -->
-                    </select>
+                    <!-- Model Selection Dropdown -->
+                    <div class="mt-2">
+                        <label for="model-select" class="block text-sm font-medium">Select Model:</label>
+                        <select id="model-select" class="w-full p-2 mt-1 rounded-lg bg-white text-gray-900">
+                            <option value="google/gemini-2.0-pro-exp-02-05:free">Gemini 2.0 Pro</option>
+                            <option value="openai/gpt-4">GPT-4</option>
+                            <option value="anthropic/claude-2">Claude 2</option>
+                            <option value="meta/llama-2-70b-chat">Llama 2 (70B)</option>
+                            <option value="cohere/command-r-plus">Cohere Command R+</option>
+                        </select>
+                    </div>
+                    <!-- API Key Input -->
+                    <div class="mt-2">
+                        <label for="api-key-input" class="block text-sm font-medium">API Key (optional):</label>
+                        <input id="api-key-input" type="password" class="w-full p-2 mt-1 rounded-lg bg-white text-gray-900" placeholder="Enter your API key">
+                    </div>
                 </div>
         
                 <!-- Chat Messages -->
@@ -642,6 +647,11 @@ $(document).ready(async function () {
             const sendButton = assistantContainer.querySelector("#assistant-send");
             const clearButton = assistantContainer.querySelector("#assistant-clear");
             const modelSelect = assistantContainer.querySelector("#model-select");
+            const apiKeyInput = assistantContainer.querySelector("#api-key-input");
+        
+            // Load default API key from localStorage (if available)
+            const defaultApiKey = localStorage.getItem("defaultApiKey") || AI_API_KEY; // Fallback to your key
+            apiKeyInput.value = defaultApiKey; // Pre-fill the input with the default key
         
             // Add a message to the chat
             function addMessage(role, content) {
@@ -699,6 +709,9 @@ $(document).ready(async function () {
                     // Get selected model from the dropdown
                     const selectedModel = modelSelect.value;
         
+                    // Get API key (user's key if provided, otherwise default key)
+                    const apiKey = apiKeyInput.value.trim() || defaultApiKey;
+        
                     // Prepare messages for the API
                     const messages = [
                         { role: "system", content: "You are a helpful coding assistant. Respond concisely and format your answers for readability. Context: " + context },
@@ -709,7 +722,7 @@ $(document).ready(async function () {
                     const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                         method: "POST",
                         headers: {
-                            "Authorization": `Bearer ${AI_API_KEY}`,
+                            "Authorization": `Bearer ${apiKey}`, // Use the selected API key
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
@@ -728,7 +741,7 @@ $(document).ready(async function () {
                     addMessage("assistant", assistantResponse);
                 } catch (error) {
                     console.error("Error:", error);
-                    addMessage("assistant", "An error occurred while processing your request. You may need more tokens to use this model.");
+                    addMessage("assistant", "An error occurred while processing your request.");
                 } finally {
                     // Re-enable send button
                     sendButton.disabled = false;
@@ -740,6 +753,14 @@ $(document).ready(async function () {
             function clearChat() {
                 chatBody.innerHTML = "";
             }
+        
+            // Save API key to localStorage when the input loses focus
+            apiKeyInput.addEventListener("blur", () => {
+                const userApiKey = apiKeyInput.value.trim();
+                if (userApiKey) {
+                    localStorage.setItem("defaultApiKey", userApiKey); // Save the user's key
+                }
+            });
         
             // Event listeners
             sendButton.addEventListener("click", sendMessage);
